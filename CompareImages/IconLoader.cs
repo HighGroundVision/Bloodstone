@@ -17,11 +17,11 @@ namespace CompareImages
             // Needs to be based on Rez...!
 
             //var defaultBounds = new Rectangle(225, 660, 95, 95); // 1600 * 920
-            var defaultBounds = new Rectangle(270, 760, 115, 115); // 1920 * 1080
+            var defaultBounds = new Rectangle(284, 777, 89, 81); // 1920 * 1080
 
             for (int i = 0; i < 12; i++)
             {
-                var left = defaultBounds.Left + (defaultBounds.Width * i);
+                var left = defaultBounds.Left + (114 * i);
                 var filter = new Crop(new Rectangle(left, defaultBounds.Top, defaultBounds.Width, defaultBounds.Height));
                 yield return filter.Apply(image);
             }
