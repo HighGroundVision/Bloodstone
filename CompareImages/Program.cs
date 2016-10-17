@@ -18,7 +18,15 @@ namespace CompareImages
     {
         static void Main(string[] args)
         {
-            SetGameStateCFG();
+            try
+            {
+                SetGameStateCFG();
+            }
+            catch(Exception ex)
+            {
+                Console.Error.WriteLine("Failed to set CFG: "  + ex.Message);
+            }
+
             using (var gsl = new GameStateListener(4000))
             {
                 gsl.NewGameState += new NewGameStateHandler(OnNewGameState);
@@ -43,8 +51,6 @@ namespace CompareImages
         {
             try
             {
-                Console.WriteLine("Ping");
-
                 if (gs.Previously.Map.GameState == DOTA_GameState.DOTA_GAMERULES_STATE_WAIT_FOR_PLAYERS_TO_LOAD && gs.Map.GameState == DOTA_GameState.DOTA_GAMERULES_STATE_HERO_SELECTION)
                 {
                     Console.WriteLine("Started Game, waiting for animation to finish.");
