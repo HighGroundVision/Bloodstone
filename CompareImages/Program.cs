@@ -32,6 +32,7 @@ namespace CompareImages
 
                 Console.WriteLine("Listening for game integration calls...");
                 Console.WriteLine("Press any key to close.");
+                Console.WriteLine("");
                 Console.ReadKey();
 
                 gsl.Stop();
@@ -46,17 +47,24 @@ namespace CompareImages
 
                 if (gs.Previously.Map.GameState == DOTA_GameState.DOTA_GAMERULES_STATE_WAIT_FOR_PLAYERS_TO_LOAD && gs.Map.GameState == DOTA_GameState.DOTA_GAMERULES_STATE_HERO_SELECTION)
                 {
+                    Console.WriteLine("Started Game, waiting for animation to finish.");
+
                     // Wait for ability draft screen to load.
                     Thread.Sleep(3000); // Yes it takes 3 seconds to finish the load animation.
 
+                    Console.WriteLine("Animation finished. Capturing Dota2 screen.");
+
                     // Take screen shot
                     var template = ScreenCapture.CaptureApplication("dota2");
+                    template.Save("tempalte.png", ImageFormat.Png);
+
+                    Console.WriteLine("Captured screen. Extracting images for Ultimate's");
 
                     // Extract ultimate images
                     var icons = ImageLoader.ExtractUltimates(template).ToList();
-
-                    template.Save("tempalte.png", ImageFormat.Png);
                     for (int i = 0; i < icons.Count; i++) icons[i].Save(string.Format("icon{0}.png", (i + 1)), ImageFormat.Png);
+
+                    Console.WriteLine("Extracted Ultimate's. Matching extractions to Ultimate's on file.");
 
                     // Process icons to find match
                     var abilities = icons.AsParallel().Select(icon => MatchIcon(icon)).ToList();
@@ -65,6 +73,8 @@ namespace CompareImages
                     // if full draft found then lunch web site
                     if (keys.Count == 12)
                     {
+                        Console.WriteLine("Draft found. Opening drafting page");
+
                         var key = string.Join(",", keys);
                         var url = string.Format("http://www.abilitydrafter.com/Draft?key={0}", key);
                         Process.Start(url);

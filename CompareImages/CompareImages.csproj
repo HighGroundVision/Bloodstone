@@ -68,7 +68,6 @@
     <Compile Include="ScreenCapture.cs" />
     <Compile Include="IconLoader.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="Program.back.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
