@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BitmapExtensions.cs" />
+    <Compile Include="GamestateIntegration.cs" />
     <Compile Include="ScreenCapture.cs" />
     <Compile Include="IconLoader.cs" />
     <Compile Include="Program.cs" />
