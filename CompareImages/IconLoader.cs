@@ -65,8 +65,8 @@ namespace CompareImages
             //Configure Filter
             _blobCounter.MinWidth = 50;
             _blobCounter.MinHeight = 50;
-            _blobCounter.MaxWidth = 100;
-            _blobCounter.MaxHeight = 100;
+            _blobCounter.MaxWidth = 120;
+            _blobCounter.MaxHeight = 120;
             _blobCounter.FilterBlobs = true;
 
             _blobCounter.ProcessImage(_bitmapBinaryImage);

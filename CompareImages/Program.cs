@@ -19,33 +19,57 @@ namespace CompareImages
     
     class Program
     {
+        const string IMAGE_SAVE_DIR_FORMAT = "images/{0}/";
+        const string IMAGE_CAPTURE_NAME = "capture.png";
+
         static void Main(string[] args)
         {
-            //try
-            //{
-            //    GamestateIntegration.CopyGSIFile();
-            //}
-            //catch(Exception ex)
-            //{
-            //    Console.Error.WriteLine("Failed to set CFG: "  + ex.Message);
-            //}
-
-            using (var gsl = new GameStateListener(4000))
+            
+            if (args.Length == 1)
             {
-                gsl.NewGameState += new NewGameStateHandler(OnNewGameState);
-
-                if (!gsl.Start())
+                var imageDirectory = string.Format(IMAGE_SAVE_DIR_FORMAT, args[0]);
+                if(Directory.Exists(imageDirectory))
                 {
-                    Console.WriteLine("GameStateListener could not start. Try running this program as Administrator.");
-                    Console.WriteLine("Exiting.");
-                    return;
+                    Directory.EnumerateFiles(imageDirectory, "icon*", SearchOption.TopDirectoryOnly)
+                        .ToList()
+                        .ForEach(x => File.Delete(x));
+
+                    var template = (Bitmap)Bitmap.FromFile(imageDirectory + IMAGE_CAPTURE_NAME);
+                    ProcessScreenShot(template, imageDirectory);
                 }
+                else
+                {
+                    Console.WriteLine("Invalid match folder");
+                }
+            }
+            else
+            {
+                //try
+                //{
+                //    GamestateIntegration.CopyGSIFile();
+                //}
+                //catch(Exception ex)
+                //{
+                //    Console.Error.WriteLine("Failed to set CFG: "  + ex.Message);
+                //}
 
-                Console.WriteLine("Listening for game integration calls...");
-                Console.WriteLine("Press any key to close.");
-                Console.ReadKey();
+                using (var gsl = new GameStateListener(4000))
+                {
+                    gsl.NewGameState += new NewGameStateHandler(OnNewGameState);
 
-                gsl.Stop();
+                    if (!gsl.Start())
+                    {
+                        Console.WriteLine("GameStateListener could not start. Try running this program as Administrator.");
+                        Console.WriteLine("Exiting.");
+                        return;
+                    }
+
+                    Console.WriteLine("Listening for game integration calls...");
+                    Console.WriteLine("Press any key to close.");
+                    Console.ReadKey();
+
+                    gsl.Stop();
+                }
             }
         }
 
@@ -55,7 +79,7 @@ namespace CompareImages
             {
                 if (gs.Previously.Map.GameState == DOTA_GameState.DOTA_GAMERULES_STATE_WAIT_FOR_PLAYERS_TO_LOAD && gs.Map.GameState == DOTA_GameState.DOTA_GAMERULES_STATE_HERO_SELECTION)
                 {
-                    var imageDirectory = string.Format("images/{0}/", gs.Map.MatchID);
+                    var imageDirectory = string.Format(IMAGE_SAVE_DIR_FORMAT, gs.Map.MatchID);
                     Directory.CreateDirectory(imageDirectory);
 
                     Console.WriteLine("");
@@ -68,39 +92,9 @@ namespace CompareImages
 
                     // Take screen shot
                     var template = ScreenCapture.CaptureApplication("dota2");
-                    template.Save(imageDirectory + "capture.png", ImageFormat.Png);
+                    template.Save(imageDirectory + IMAGE_CAPTURE_NAME, ImageFormat.Png);
 
-                    Console.WriteLine("Captured screen. Extracting images for Ultimate's");
-
-                    // Extract ultimate images
-                    var limit = template.Height - (template.Height * 0.3);
-                    var bounds = ImageLoader.ExtractUltimatesBounds(template)
-                        .Where(_ => _.Y > limit)
-                        .OrderBy(_ => _.X)
-                        .ToList();
-
-                    var icons = ImageLoader.ExtractUltimates(template, bounds).ToList();
-                    for (int i = 0; i < icons.Count; i++) icons[i].Save(imageDirectory + string.Format("icon{0}.png", (i + 1)), ImageFormat.Png);
-
-                    Console.WriteLine("Extracted Ultimate's. Matching extractions to Ultimate's on file.");
-
-                    // Process icons to find match
-                    var abilities = icons.AsParallel().Select(icon => MatchIcon(icon)).ToList();
-
-                    // if full draft found then lunch web site
-                    var keys = abilities.Distinct().ToList();
-                    if (keys.Count == 12)
-                    {
-                        Console.WriteLine("Draft found. Opening drafting page");
-
-                        var key = string.Join(",", keys);
-                        var url = string.Format("http://www.abilitydrafter.com/Draft?key={0}", key);
-                        Process.Start(url);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Failed to draft. Check debug images.");
-                    }
+                    ProcessScreenShot(template, imageDirectory);
                 }
             }
             catch(Exception)
@@ -127,7 +121,61 @@ namespace CompareImages
         }
 
         
+        static void ProcessScreenShot(Bitmap template, string imageDirectory)
+        {
+            Console.WriteLine("Captured screen. Extracting images for Ultimate's");
 
+            // Extract ultimate images
+            var minLimit = template.Height - (template.Height * 0.3);
+            var maxLimit = template.Height - (template.Height * 0.15);
+            var bounds = ImageLoader.ExtractUltimatesBounds(template)
+                .Where(_ => _.Y > minLimit && _.Y < maxLimit)
+                .OrderBy(_ => _.X)
+                .ToList();
+
+            // Get all icon that are within a certain percentile
+            const double percentageMatch = 90;
+            double denominator = bounds.Count - 1;
+            var similarBounds = bounds.Select(value => new
+            {
+                Value = value,
+                Proportion = bounds.Count(datum => WithinPercentageOfEachOther(value.Height, datum.Height) && WithinPercentageOfEachOther(value.Width, datum.Width)) / denominator * 100
+            })
+            .Where(x => x.Proportion > percentageMatch)
+            .Select(x => x.Value)
+            .ToList();
+
+            var icons = ImageLoader.ExtractUltimates(template, similarBounds).ToList();
+            for (int i = 0; i < icons.Count; i++) icons[i].Save(imageDirectory + string.Format("icon{0}.png", (i + 1)), ImageFormat.Png);
+
+            Console.WriteLine("Extracted Ultimate's. Matching extractions to Ultimate's on file.");
+
+            // Process icons to find match
+            var abilities = icons.AsParallel().Select(icon => MatchIcon(icon)).ToList();
+
+            // if full draft found then lunch web site
+            var keys = abilities.Distinct().ToList();
+            if (keys.Count == 12)
+            {
+                Console.WriteLine("Draft found. Opening drafting page");
+
+                var key = string.Join(",", keys);
+                var url = string.Format("http://www.abilitydrafter.com/Draft?key={0}", key);
+                Process.Start(url);
+            }
+            else
+            {
+                Console.WriteLine("Failed to draft. Check debug images.");
+                keys.ForEach(x => Console.WriteLine("Key: {0}", x));
+            }
+        }
+
+        static bool WithinPercentageOfEachOther(double left, double right, double percentage = 0.02)
+        {
+            var variance = left * percentage;
+            //return left > (right + variance) && (right - variance) < left;
+            return (left + variance) > right && right > (left - variance);
+        }
     }
 
 }
