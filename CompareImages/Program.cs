@@ -9,7 +9,10 @@ using System.Threading;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Diagnostics;
-
+using AForge.Imaging;
+using AForge.Math.Geometry;
+using AForge;
+using System.IO;
 
 namespace CompareImages
 {
@@ -52,6 +55,9 @@ namespace CompareImages
             {
                 if (gs.Previously.Map.GameState == DOTA_GameState.DOTA_GAMERULES_STATE_WAIT_FOR_PLAYERS_TO_LOAD && gs.Map.GameState == DOTA_GameState.DOTA_GAMERULES_STATE_HERO_SELECTION)
                 {
+                    var imageDirectory = string.Format("images/{0}/", gs.Map.MatchID);
+                    Directory.CreateDirectory(imageDirectory);
+
                     Console.WriteLine("");
                     Console.WriteLine("Started Game, waiting for animation to finish.");
 
@@ -62,21 +68,25 @@ namespace CompareImages
 
                     // Take screen shot
                     var template = ScreenCapture.CaptureApplication("dota2");
-
-                    template.Save("tempalte.png", ImageFormat.Png);
+                    template.Save(imageDirectory + "capture.png", ImageFormat.Png);
 
                     Console.WriteLine("Captured screen. Extracting images for Ultimate's");
 
                     // Extract ultimate images
-                    var icons = ImageLoader.ExtractUltimates(template).ToList();
+                    var limit = template.Height - (template.Height * 0.3);
+                    var bounds = ImageLoader.ExtractUltimatesBounds(template)
+                        .Where(_ => _.Y > limit)
+                        .OrderBy(_ => _.X)
+                        .ToList();
 
-                    for (int i = 0; i < icons.Count; i++) icons[i].Save(string.Format("icon{0}.png", (i + 1)), ImageFormat.Png);
+                    var icons = ImageLoader.ExtractUltimates(template, bounds).ToList();
+                    for (int i = 0; i < icons.Count; i++) icons[i].Save(imageDirectory + string.Format("icon{0}.png", (i + 1)), ImageFormat.Png);
 
                     Console.WriteLine("Extracted Ultimate's. Matching extractions to Ultimate's on file.");
 
                     // Process icons to find match
                     var abilities = icons.AsParallel().Select(icon => MatchIcon(icon)).ToList();
-                    
+
                     // if full draft found then lunch web site
                     var keys = abilities.Distinct().ToList();
                     if (keys.Count == 12)
@@ -93,11 +103,11 @@ namespace CompareImages
                     }
                 }
             }
-            catch (Exception ex)
+            catch(Exception)
             {
-                Console.Error.WriteLine(ex.Message);
-                // Try again next time...
-            } 
+                // Next Time Gadget. NEXT TIME!
+            }
+
         }
 
         private static int MatchIcon(Bitmap icon)
@@ -116,8 +126,8 @@ namespace CompareImages
             return collection.FirstOrDefault();
         }
 
+        
 
-       
     }
-    
+
 }

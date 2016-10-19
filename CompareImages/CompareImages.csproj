@@ -72,6 +72,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="images\placeholder.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="App.config" />
     <Content Include="gamestate_integration_hgv.cfg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
