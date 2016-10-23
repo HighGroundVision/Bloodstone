@@ -1,6 +1,6 @@
 "High Ground Vision"
 {
-    "uri"           "http://localhost:4000/"
+    "uri"           "http://localhost:[PORT]/"
     "timeout"       "5.0"
     "buffer"        "0.1"
     "throttle"      "0.1"

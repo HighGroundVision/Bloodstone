@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("CompareImages")]
+[assembly: AssemblyTitle("HGV.AD.AutoDrafter")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("CompareImages")]
+[assembly: AssemblyProduct("HGV.AD.AutoDrafter")]
 [assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("3835860d-569f-4435-bfe1-1f5fcc317e13")]
+[assembly: Guid("d868ef2e-9f6a-4383-a4c8-7a964b9c54bc")]
 
 // Version information for an assembly consists of the following four values:
 //

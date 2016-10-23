@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CompareImages
+namespace HGV.AD.AutoDrafter
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct Rect
@@ -20,7 +20,7 @@ namespace CompareImages
         public int bottom;
     }
 
-    public static class ScreenCapture
+    public class ScreenCapture
     {
         [DllImport("user32.dll")]
         private static extern int SetForegroundWindow(IntPtr hWnd);
@@ -31,28 +31,32 @@ namespace CompareImages
         private static extern IntPtr ShowWindow(IntPtr hWnd, int nCmdShow);
 
         [DllImport("user32.dll")]
-        public static extern IntPtr GetWindowRect(IntPtr hWnd, ref Rect rect);
+        private static extern IntPtr GetWindowRect(IntPtr hWnd, ref Rect rect);
 
-        public static Bitmap CaptureApplication(string procName)
+        private static Process GetProcess()
         {
-            Process proc;
 
             // Cater for cases when the process can't be located.
             try
             {
-                proc = Process.GetProcessesByName(procName)[0];
+                return Process.GetProcessesByName("dota2")[0];
             }
             catch (IndexOutOfRangeException ex)
             {
                 throw new ApplicationException("Failed to find Dota process.", ex);
             }
+        }
+
+        public static Bitmap CaptureApplication()
+        {
+            Process proc = GetProcess();
 
             // You need to focus on the application
             SetForegroundWindow(proc.MainWindowHandle);
             ShowWindow(proc.MainWindowHandle, SW_RESTORE);
 
             // You need some amount of delay
-            Thread.Sleep(500);
+            Thread.Sleep(10);
 
             var rect = new Rect();
             var error = IntPtr.Zero;
@@ -72,9 +76,10 @@ namespace CompareImages
             var height = rect.bottom - rect.top;
 
             var bmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
-            Graphics.FromImage(bmp).CopyFromScreen(rect.left,rect.top,0, 0, new Size(width, height), CopyPixelOperation.SourceCopy);
+            Graphics.FromImage(bmp).CopyFromScreen(rect.left, rect.top, 0, 0, new Size(width, height), CopyPixelOperation.SourceCopy);
 
             return bmp;
         }
+
     }
 }
