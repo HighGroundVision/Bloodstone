@@ -10,4 +10,4 @@
 
 **Notes:**
 
-- #1. Pubish the application and the setup.exe
+- #1. Pubish the application and run the setup.exe
