@@ -1,7 +1,13 @@
 # Bloodstone
 
-Notes: 
-- #1. place the provided gamestate_integration_hgv.cfg in the following directory
-SteamLibrary\steamapps\common\dota 2 beta\game\dota\cfg\gamestate_integration
-- #2.  Working on autoscaling feature
-- #3.  run the app
+**Project Status:**
+
+- #1. Screen capture dota
+- #2. Extract images
+- #3. Compare images
+- #4. Extract abilities
+- #5. Lunch Site
+
+**Notes:**
+
+- #1. Pubish the application and the setup.exe
