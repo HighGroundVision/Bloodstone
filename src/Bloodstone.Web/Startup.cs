@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace HGV.AD.Bloodstone.Web
 {
@@ -16,6 +17,7 @@ namespace HGV.AD.Bloodstone.Web
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDirectoryBrowser();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -28,8 +30,12 @@ namespace HGV.AD.Bloodstone.Web
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseDefaultFiles(new DefaultFilesOptions() { DefaultFileNames = new List<string>() { "publish.html" } });
-            app.UseStaticFiles();
+            app.UseDefaultFiles();
+
+            var provider = new FileExtensionContentTypeProvider();
+            provider.Mappings.Add(".exe", "application/vnd.microsoft.portable-executable");
+            app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = provider });
+            
         }
     }
 }
