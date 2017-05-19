@@ -51,6 +51,8 @@ namespace HGV.AD.AutoDrafter
             {
                 if (gs.Previously.Map.GameState == GS_WAITING && gs.Map.GameState == GS_DRAFTING)
                 {
+                    // gs.Hero.ID
+
                     Thread.Sleep(100);
 
                     var draftAnalyzer = new DraftAnalyzer();
