@@ -13,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HGV.AD.Bloodstone.Web", "src\Bloodstone.Web\HGV.AD.Bloodstone.Web\HGV.AD.Bloodstone.Web.csproj", "{03F72653-529F-4713-B989-7F1F13393DE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HGV.AD.Bloodstone.Web", "src\Bloodstone.Web\HGV.AD.Bloodstone.Web.csproj", "{03F72653-529F-4713-B989-7F1F13393DE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
