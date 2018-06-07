@@ -1,19 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.6
+VisualStudioVersion = 15.0.27703.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HGV.AD.Bloodstone.App", "src\Bloodstone.Win\HGV.AD.Bloodstone.App.csproj", "{D868EF2E-9F6A-4383-A4C8-7A964B9C54BC}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BBE919E5-A990-4984-8E21-EFA905DDC3E6}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CB8570E2-DDF5-4CAC-9139-B1A5C51C1A7D}"
-	ProjectSection(SolutionItems) = preProject
-		LICENSE = LICENSE
-		README.md = README.md
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HGV.AD.Bloodstone.Web", "src\Bloodstone.Web\HGV.AD.Bloodstone.Web.csproj", "{03F72653-529F-4713-B989-7F1F13393DE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HGV.Bloodstone", "src\HGV.Bloodstone.csproj", "{448996B4-F502-4946-B4D1-EB371B6EDA4E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,23 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D868EF2E-9F6A-4383-A4C8-7A964B9C54BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D868EF2E-9F6A-4383-A4C8-7A964B9C54BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D868EF2E-9F6A-4383-A4C8-7A964B9C54BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D868EF2E-9F6A-4383-A4C8-7A964B9C54BC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{03F72653-529F-4713-B989-7F1F13393DE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{03F72653-529F-4713-B989-7F1F13393DE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{03F72653-529F-4713-B989-7F1F13393DE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{03F72653-529F-4713-B989-7F1F13393DE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{448996B4-F502-4946-B4D1-EB371B6EDA4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{448996B4-F502-4946-B4D1-EB371B6EDA4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{448996B4-F502-4946-B4D1-EB371B6EDA4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{448996B4-F502-4946-B4D1-EB371B6EDA4E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{D868EF2E-9F6A-4383-A4C8-7A964B9C54BC} = {BBE919E5-A990-4984-8E21-EFA905DDC3E6}
-		{03F72653-529F-4713-B989-7F1F13393DE7} = {BBE919E5-A990-4984-8E21-EFA905DDC3E6}
-	EndGlobalSection
-	GlobalSection(CodealikeProperties) = postSolution
-		SolutionGuid = 105e110a-d59c-4978-beee-398d90a7b150
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {60D46D59-BB83-45E1-91D8-FA8266DB5801}
 	EndGlobalSection
 EndGlobal
