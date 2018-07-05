@@ -5,7 +5,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Reflection;
-
+using System.Threading;
 using Accord;
 using Accord.Imaging;
 using Accord.Imaging.Filters;
@@ -17,11 +17,95 @@ namespace HGV.Bloodstone
     {
         static void Main(string[] args)
         {
-            SubtractFrombackground();
+            SplitInput();
 
-            CropIcons();
+            // SubtractFrombackground();
+            // CropIcons();
+            // ProcessIcons();
+            // #####################
+            // PrintScreen();
+            // ProcessDelta();
+        }
 
-            ProcessIcons();
+        private static void SplitInput()
+        {
+            var input = (Bitmap)Bitmap.FromFile("../../data/input.jpg");
+
+            // define quadrilateral's corners
+            List<IntPoint> corners = new List<IntPoint>();
+            corners.Add(new IntPoint(719,339));     // top/left
+            corners.Add(new IntPoint(1200,339));    // top/right
+            corners.Add(new IntPoint(1252,837));    // bottom/right
+            corners.Add(new IntPoint(667,837));     // bottom/left
+            // create filter
+            var filter =new SimpleQuadrilateralTransformation(corners, 650, 750);
+            // apply the filter
+            Bitmap newImage = filter.Apply(input);
+            newImage.Save("../../data/output[1].jpg");
+        }
+
+        private static void ProcessFeatures()
+        {
+            var input = (Bitmap)Bitmap.FromFile("../../data/input.jpg");
+
+            // Create a new SURF with the default parameter values:
+            var surf = new SpeededUpRobustFeaturesDetector(threshold: 0.0002f, octaves: 5, initial: 2);
+
+            // Use it to extract the SURF point descriptors from the Lena image:
+            var descriptors = surf.Transform(input);
+
+            // We can obtain the actual double[] descriptors using
+
+            var features = descriptors.Select(_ => _.Descriptor);
+
+            // Now those descriptors can be used to represent the image itself, such
+            // as for example, in the Bag-of-Visual-Words approach for classification.
+        }
+
+        private static void ProcessDelta()
+        {
+            var captures = System.IO.Directory.GetFiles("../../data/captures/");
+            for (int i = 1; i < captures.Count(); i++)
+            {
+                var filelhs = captures[i-1];
+                var filerhs = captures[i];
+
+                var inputA = (Bitmap)Bitmap.FromFile(filelhs);
+                var inputB = (Bitmap)Bitmap.FromFile(filerhs);
+
+                // create filter
+                Subtract filter = new Subtract(inputA);
+
+                // apply the filter
+                Bitmap delta = filter.Apply(inputB);
+
+                delta.Save($"../../data/deltas/delta[{i:00000}].png");
+
+                inputA.Dispose();
+                inputB.Dispose();
+                delta.Dispose();
+            }
+        }
+
+        private static void PrintScreen()
+        {
+            Bitmap printscreen = new Bitmap(System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width, System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height);
+            Graphics graphics = Graphics.FromImage(printscreen as System.Drawing.Image);
+            var count = 1;
+
+            while(true)
+            {
+                var input = Console.ReadKey();
+                if (input.Key == ConsoleKey.Spacebar)
+                {
+                    graphics.CopyFromScreen(0, 0, 0, 0, printscreen.Size);
+                    printscreen.Save($"../../data/captures/capture[{count++:00000}].jpg", ImageFormat.Jpeg);
+                }
+                else if (input.Key == ConsoleKey.Escape)
+                {
+                    return;
+                }
+            }   
         }
 
         private static void SubtractFrombackground()
@@ -33,9 +117,13 @@ namespace HGV.Bloodstone
             Subtract filter = new Subtract(input1);
 
             // apply the filter
-            Bitmap resultImage = filter.Apply(input2);
+            Bitmap output = filter.Apply(input2);
 
-            resultImage.Save("../../data/input.png");
+            output.Save("../../data/input.png");
+
+            input1.Dispose();
+            input1.Dispose();
+            output.Dispose();
         }
 
         private static void CropIcons()
@@ -48,8 +136,8 @@ namespace HGV.Bloodstone
             // step 3 - locating objects
             BlobCounter blobCounter = new BlobCounter();
             blobCounter.FilterBlobs = true;
-            blobCounter.MinHeight = 25;
-            blobCounter.MinWidth = 25;
+            blobCounter.MinHeight = 10;
+            blobCounter.MinWidth = 10;
             blobCounter.MaxHeight = 150;
             blobCounter.MaxWidth = 150;
             blobCounter.ProcessImage(inputData);
@@ -62,6 +150,8 @@ namespace HGV.Bloodstone
             for (int i = 0; i < blobs.Length; i++)
             {
                 List<IntPoint> edgePoints = blobCounter.GetBlobsEdgePoints(blobs[i]);
+                Drawing.Polyline(inputData, edgePoints, Color.White);
+
                 List<IntPoint> corners;
                 if (shapeChecker.IsConvexPolygon(edgePoints, out corners))
                 {
@@ -73,17 +163,22 @@ namespace HGV.Bloodstone
                         int yMax = corners.Max(s => s.Y);
                         var rec = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
 
+                        Drawing.Rectangle(inputData, rec, Color.HotPink);
+                        //Drawing.Polyline(inputData, corners, Color.HotPink);
+
                         // create filter
-                        Crop filter = new Crop(rec);
+                        //Crop filter = new Crop(rec);
 
                         // apply the filter
-                        Bitmap croped = filter.Apply(inputData);
-                        croped.Save($"../../data/output/icon[{i}].png");
+                        //Bitmap croped = filter.Apply(inputData);
+                        //croped.Save($"../../data/output/icon[{i}].png");
                     }
                 }
             }
 
             input.UnlockBits(inputData);
+            input.Save("../../data/output.png");
+            input.Dispose();
         }
 
         private static void ProcessIcons()
@@ -117,9 +212,10 @@ namespace HGV.Bloodstone
                     if (matchings.Count() > 0)
                     {
                         Console.WriteLine($"{templateName} is a match");
-                        break;
                     }
 
+                    input.Dispose();
+                    template.Dispose();
                 }
             }
         }
