@@ -17,14 +17,101 @@ namespace HGV.Bloodstone
     {
         static void Main(string[] args)
         {
-            SplitInput();
+            Test1();
 
+            // SplitInput();
             // SubtractFrombackground();
             // CropIcons();
             // ProcessIcons();
             // #####################
             // PrintScreen();
             // ProcessDelta();
+        }
+
+        private static void Test1()
+        {
+            var input = (Bitmap)Bitmap.FromFile(@"C:\Users\Webstar\Desktop\Test\Input.png");
+            
+            Crop filterCrop = new Crop(new Rectangle(0, 0, input.Width, 100));
+            var image = filterCrop.Apply(input);
+
+            var stat = new ImageStatistics(image);
+            var medianBGColor = Color.FromArgb(stat.Red.Median, stat.Green.Median, stat.Blue.Median);
+            var bgColor = Color.FromArgb(30, 40, 50); //var bgColor = Color.FromArgb(48, 68, 68);
+
+            // create filter
+            PointedColorFloodFill filterFloodFill = new PointedColorFloodFill();
+            // configure the filter
+            filterFloodFill.Tolerance = bgColor;
+            filterFloodFill.FillColor = Color.FromArgb(0, 0, 0);
+            filterFloodFill.StartingPoint = new IntPoint(1,1);
+            // apply the filter
+            filterFloodFill.ApplyInPlace(image);
+
+            //image.Save(@"C:\Users\Webstar\Desktop\Test\Test1.png");
+
+            // lock image
+            BitmapData colorData = image.LockBits(ImageLockMode.ReadWrite);
+
+            // step 3 - locating objects
+            BlobCounter blobCounter = new BlobCounter();
+            blobCounter.FilterBlobs = true;
+            blobCounter.BackgroundThreshold = medianBGColor;
+            blobCounter.MinHeight = 50;
+            blobCounter.MinWidth = 10;
+            blobCounter.MaxHeight = 500;
+            blobCounter.MaxWidth = 200;
+            blobCounter.ProcessImage(colorData);
+
+            Blob[] blobs = blobCounter.GetObjectsInformation();
+
+            // step 4 - check objects' type and highlight
+            SimpleShapeChecker shapeChecker = new SimpleShapeChecker();
+
+            var collection = new List<Rectangle>();
+
+            for (int i = 0; i < blobs.Length; i++)
+            {
+                List<IntPoint> edgePoints = blobCounter.GetBlobsEdgePoints(blobs[i]);
+
+                IntPoint lt, br;
+                PointsCloud.GetBoundingRectangle(edgePoints, out lt, out br);
+                var bounds = new Rectangle(lt.X, lt.Y, br.X - lt.X, br.Y - lt.Y);
+
+                collection.Add(bounds);
+            }
+          
+            var heroes = collection.OrderBy(_ => _.X).Skip(1).Take(10).ToList();
+            //var top = (int)heroes.Average(_ => _.Top);
+            //var width = (int)heroes.Average(_ => _.Width);
+            //var height = (int)heroes.Average(_ => _.Height);
+
+            foreach (var item in heroes)
+            {
+                var index = heroes.IndexOf(item) + 1;
+
+                var bounds = new Rectangle(item.Center().X - 25, item.Center().Y - 25, 50, 50);
+
+                /*
+                var bounds = new Rectangle(item.X, item.Y, item.Width, item.Height);
+                if (bounds.Top != top)
+                    bounds.Location = new System.Drawing.Point(item.Location.X, top);
+
+                if (bounds.Height != height)
+                    bounds.Height = height;
+                */
+
+                Drawing.Rectangle(colorData, bounds, Color.HotPink);
+
+                Crop filterExtract = new Crop(bounds);
+                var heroImg = filterExtract.Apply(input);
+                heroImg.Save(@"C:\Users\Webstar\Desktop\Test\Hero[" + index + "].png");
+            }
+
+            image.UnlockBits(colorData);
+            image.Save(@"C:\Users\Webstar\Desktop\Test\Output.png");
+
+            // 10 vs 120
         }
 
         private static void SplitInput()
