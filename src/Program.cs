@@ -15,17 +15,135 @@ namespace HGV.Bloodstone
 {
     class Program
     {
-        static void Main(string[] args)
-        {
-            Test1();
+        static void Main(string[] args) => Test3();
 
-            // SplitInput();
-            // SubtractFrombackground();
-            // CropIcons();
-            // ProcessIcons();
-            // #####################
-            // PrintScreen();
-            // ProcessDelta();
+        private static void Test3()
+        {
+            var directoryTemplates = @"C:\Users\Jamie Webster\source\repos\HGV\Hyperstone\heroes\profile";
+            var directoryHeroes = @"C:\Users\Jamie Webster\source\repos\HGV\Bloodstone\src\data\Test3\";
+
+            var filter = new ResizeBilinear(45, 64);
+            var matcher = new ExhaustiveTemplateMatching(0f);
+
+            var filesTemplate = System.IO.Directory.GetFiles(directoryTemplates);
+            var templates = new Dictionary<string, Bitmap>();
+            foreach (var f in filesTemplate)
+            {
+                var fi = new System.IO.FileInfo(f);
+
+                try
+                {
+                    var image = (Bitmap)Bitmap.FromFile(f);
+                    var resized = filter.Apply(image);
+
+                    templates.Add(fi.Name, resized);
+                }
+                catch (Exception) { }
+            }
+
+            var filesHero = System.IO.Directory.GetFiles(directoryHeroes);
+            foreach (var f in filesHero)
+            {
+                var heroImage = (Bitmap)Bitmap.FromFile(f);
+
+                var matches = new List<Tuple<string, float>>();
+
+                foreach (var pair in templates)
+                {
+                    try
+                    {
+                        var score = matcher.ProcessImage(heroImage, pair.Value).Select(_ => _.Similarity).FirstOrDefault();
+                        matches.Add(Tuple.Create(pair.Key, score));
+                    }
+                    catch (Exception) { }
+                }
+
+                var match = matches.OrderBy(_ => _.Item2).Select(_ => _.Item1).FirstOrDefault();
+                Console.WriteLine($"Match: {match}");
+            }
+
+            Console.WriteLine("Done");
+        }
+
+        private static void Test2()
+        {
+            var input = (Bitmap)Bitmap.FromFile(@"C:\Users\Jamie Webster\source\repos\HGV\Bloodstone\src\data\Test2\Input.png");
+
+            Crop filterCrop = new Crop(new Rectangle(0, 0, input.Width, 100));
+            var image = filterCrop.Apply(input);
+
+            var stat = new ImageStatistics(image);
+            var medianBGColor = Color.FromArgb(stat.Red.Median, stat.Green.Median, stat.Blue.Median);
+            var bgColor = Color.FromArgb(30, 40, 50); //var bgColor = Color.FromArgb(48, 68, 68);
+
+            // create filter
+            PointedColorFloodFill filterFloodFill = new PointedColorFloodFill();
+            // configure the filter
+            filterFloodFill.Tolerance = bgColor;
+            filterFloodFill.FillColor = Color.FromArgb(0, 0, 0);
+            filterFloodFill.StartingPoint = new IntPoint(1, 1);
+            // apply the filter
+            filterFloodFill.ApplyInPlace(image);
+
+            // lock image
+            BitmapData colorData = image.LockBits(ImageLockMode.ReadWrite);
+
+            // step 3 - locating objects
+            BlobCounter blobCounter = new BlobCounter();
+            blobCounter.FilterBlobs = true;
+            blobCounter.BackgroundThreshold = medianBGColor;
+            blobCounter.MinHeight = 50;
+            blobCounter.MinWidth = 10;
+            blobCounter.MaxHeight = 500;
+            blobCounter.MaxWidth = 200;
+            blobCounter.ProcessImage(colorData);
+
+            Blob[] blobs = blobCounter.GetObjectsInformation();
+
+            // step 4 - check objects' type and highlight
+            SimpleShapeChecker shapeChecker = new SimpleShapeChecker();
+
+            var collection = new List<Rectangle>();
+
+            for (int i = 0; i < blobs.Length; i++)
+            {
+                List<IntPoint> edgePoints = blobCounter.GetBlobsEdgePoints(blobs[i]);
+
+                IntPoint lt, br;
+                PointsCloud.GetBoundingRectangle(edgePoints, out lt, out br);
+                var bounds = new Rectangle(lt.X, lt.Y, br.X - lt.X, br.Y - lt.Y);
+
+                collection.Add(bounds);
+            }
+
+            var heroes = collection.OrderBy(_ => _.X).Skip(1).Take(10).ToList();
+            int top = (int)Math.Floor(heroes.Average(_ => _.Top));
+            int bottom = (int)Math.Floor(heroes.Average(_ => _.Bottom));
+            int width = (int)Math.Floor(heroes.Average(_ => _.Width));
+            int height = bottom - top;
+            int offset = 5;
+
+            foreach (var item in heroes)
+            {
+                var index = heroes.IndexOf(item) + 1;
+
+                var bounds = new Rectangle(item.X, item.Y, item.Width, item.Height);
+                if (bounds.Top != top)
+                    bounds.Location = new System.Drawing.Point(item.X + offset, top);
+
+                if (bounds.Bottom != bottom)
+                    bounds.Size = new Size(width - offset, height);
+
+                Drawing.Rectangle(colorData, bounds, Color.HotPink);
+
+                Crop filterExtract = new Crop(bounds);
+                var heroImage = filterExtract.Apply(input);
+
+                heroImage.Save(@"C:\Users\Jamie Webster\source\repos\HGV\Bloodstone\src\data\Test2\Hero[" + index + "].png");
+            }
+
+            //image.UnlockBits(colorData);
+            //image.Save(@"C:\Users\Jamie Webster\source\repos\HGV\Bloodstone\src\data\Test2\Output.png");
         }
 
         private static void Test1()
@@ -82,24 +200,11 @@ namespace HGV.Bloodstone
             }
           
             var heroes = collection.OrderBy(_ => _.X).Skip(1).Take(10).ToList();
-            //var top = (int)heroes.Average(_ => _.Top);
-            //var width = (int)heroes.Average(_ => _.Width);
-            //var height = (int)heroes.Average(_ => _.Height);
-
             foreach (var item in heroes)
             {
                 var index = heroes.IndexOf(item) + 1;
 
                 var bounds = new Rectangle(item.Center().X - 25, item.Center().Y - 25, 50, 50);
-
-                /*
-                var bounds = new Rectangle(item.X, item.Y, item.Width, item.Height);
-                if (bounds.Top != top)
-                    bounds.Location = new System.Drawing.Point(item.Location.X, top);
-
-                if (bounds.Height != height)
-                    bounds.Height = height;
-                */
 
                 Drawing.Rectangle(colorData, bounds, Color.HotPink);
 
