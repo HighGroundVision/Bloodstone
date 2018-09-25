@@ -1,5 +1,8 @@
-﻿using AForge.Imaging;
+﻿using AForge;
+using AForge.Imaging;
+using AForge.Imaging.ColorReduction;
 using AForge.Imaging.Filters;
+using AForge.Math.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -23,10 +26,23 @@ namespace HGV.Bloodstone
     {
         static void Main(string[] args)
         {
+            var image = (Bitmap)Bitmap.FromFile(@"C:\Users\Jamie Webster\Downloads\Test1.png");
+
+            // create filter
+            Crop filter = new Crop(new Rectangle(85, 10, 465, 50));
+            // apply the filter
+            Bitmap newImage = filter.Apply(image);
+
+            newImage.Save(@"C:\Users\Jamie Webster\Downloads\Output.png");
+        }
+
+        /*
+        static void Main(string[] args)
+        {
             // create template matching algorithm's instance
             ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(0.80f);
 
-            var sourceImage = (Bitmap)Bitmap.FromFile(@"C:\Users\Jamie Webster\Downloads\Copy.png");
+            var sourceImage = (Bitmap)Bitmap.FromFile(@"C:\Users\Jamie Webster\Downloads\Inputs\Input5.png");
 
             var height = sourceImage.Height - 5;
             var raito = height / 94.0f;
@@ -71,5 +87,6 @@ namespace HGV.Bloodstone
                 Console.WriteLine("{0}: {1} - {2}", group.Key, item.Name, item.Similarity);
             }
         }
+        */
     }
 }
