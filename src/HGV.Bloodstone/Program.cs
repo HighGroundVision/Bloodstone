@@ -26,34 +26,34 @@ namespace HGV.Bloodstone
     {
         static void Main(string[] args)
         {
-            var image = (Bitmap)Bitmap.FromFile(@"C:\Users\Jamie Webster\Downloads\Test1.png");
+            var image = (Bitmap)Bitmap.FromFile(@"C:\Users\Webstar\Downloads\Capture1.png");
+
+            int h = (int)(image.Height * 0.075);
+            int x = (int)(image.Width * 0.110);
+            int w = (int)(image.Width * 0.325);
 
             // create filter
-            Crop filter = new Crop(new Rectangle(85, 10, 465, 50));
+            Crop filter = new Crop(new Rectangle(x, 10, w, h));
             // apply the filter
             Bitmap newImage = filter.Apply(image);
 
-            newImage.Save(@"C:\Users\Jamie Webster\Downloads\Output.png");
-        }
+            newImage.Save(@"C:\Users\Webstar\Downloads\Output1.png");
 
-        /*
-        static void Main(string[] args)
-        {
             // create template matching algorithm's instance
-            ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(0.80f);
+            ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(0.8f);
 
-            var sourceImage = (Bitmap)Bitmap.FromFile(@"C:\Users\Jamie Webster\Downloads\Inputs\Input5.png");
+            var sourceImage = (Bitmap)Bitmap.FromFile(@"C:\Users\Webstar\Downloads\Output1.png");
 
-            var height = sourceImage.Height - 5;
+            var height = sourceImage.Height - 10;
             var raito = height / 94.0f;
             var width = (int)(71 * raito);
-            var parts = sourceImage.Width / 11;
+            var parts = sourceImage.Width / 10;
 
             // create filter
             var resizeFilter = new ResizeBicubic(width, height);
 
             var collection = new List<DataPackage>();
-            var files = Directory.GetFiles(@"C:\Users\Jamie Webster\Downloads\heroes");
+            var files = Directory.GetFiles(@"C:\Users\Webstar\Downloads\heroes");
             foreach (var file in files)
             {
                 var template = (Bitmap)Bitmap.FromFile(file);
@@ -63,8 +63,7 @@ namespace HGV.Bloodstone
 
                 // find all matchings with specified above similarity
                 var matchings = tm.ProcessImage(sourceImage, resizedTemplate);
-                var match = matchings.OrderByDescending(_ => _.Similarity).FirstOrDefault();
-                if(match != null)
+                foreach (var match in matchings)
                 {
                     var fi = new FileInfo(file);
 
@@ -80,13 +79,18 @@ namespace HGV.Bloodstone
             }
 
             // Sort
-            var groups = collection.GroupBy(_ => _.Index).OrderBy(_ => _.Key).Skip(1);
+            var groups = collection.GroupBy(_ => _.Index).OrderBy(_ => _.Key);
             foreach (var group in groups)
             {
-                var item = group.OrderByDescending(_ => _.Similarity).FirstOrDefault();
-                Console.WriteLine("{0}: {1} - {2}", group.Key, item.Name, item.Similarity);
+                Console.WriteLine("{0}", group.Key);
+
+                var items = group.OrderByDescending(_ => _.Similarity).Take(10).ToList();
+                foreach (var item in items)
+                {
+                    Console.WriteLine("{0} - {1}", item.Name, item.Similarity);
+                }
+ 
             }
         }
-        */
     }
 }
