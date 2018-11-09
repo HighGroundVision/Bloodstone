@@ -3,13 +3,17 @@ using AForge.Imaging;
 using AForge.Imaging.ColorReduction;
 using AForge.Imaging.Filters;
 using AForge.Math.Geometry;
+using Dota2GSI;
+using Dota2GSI.Nodes;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HGV.Bloodstone
@@ -18,78 +22,121 @@ namespace HGV.Bloodstone
     {
         public float Similarity { get; set; }
         public Rectangle Bounds { get; set; }
-        public string Name { get; set; }
+        public string Key { get; set; }
+        public int Hero { get; set; }
         public int Index { get; set; }
     }
 
     class Program
     {
+        private const DOTA_GameState GS_WAITING = DOTA_GameState.DOTA_GAMERULES_STATE_WAIT_FOR_PLAYERS_TO_LOAD;
+        private const DOTA_GameState GS_DRAFTING = DOTA_GameState.DOTA_GAMERULES_STATE_HERO_SELECTION;
+
         static void Main(string[] args)
         {
-            var image = (Bitmap)Bitmap.FromFile(@"C:\Users\Webstar\Downloads\Capture1.png");
+            var gsl = new GameStateListener(4000);
+            gsl.NewGameState += new NewGameStateHandler(OnNewGameState);
 
-            int h = (int)(image.Height * 0.075);
-            int x = (int)(image.Width * 0.110);
-            int w = (int)(image.Width * 0.325);
+            var result = gsl.Start();
 
-            // create filter
-            Crop filter = new Crop(new Rectangle(x, 10, w, h));
-            // apply the filter
-            Bitmap newImage = filter.Apply(image);
+            Console.WriteLine("Waiting...");
+            var key = Console.ReadKey();
 
-            newImage.Save(@"C:\Users\Webstar\Downloads\Output1.png");
+            gsl.Stop();
+        }
 
-            // create template matching algorithm's instance
-            ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(0.8f);
-
-            var sourceImage = (Bitmap)Bitmap.FromFile(@"C:\Users\Webstar\Downloads\Output1.png");
-
-            var height = sourceImage.Height - 10;
-            var raito = height / 94.0f;
-            var width = (int)(71 * raito);
-            var parts = sourceImage.Width / 10;
-
-            // create filter
-            var resizeFilter = new ResizeBicubic(width, height);
-
-            var collection = new List<DataPackage>();
-            var files = Directory.GetFiles(@"C:\Users\Webstar\Downloads\heroes");
-            foreach (var file in files)
+        static void OnNewGameState(GameState gs)
+        {
+            try
             {
-                var template = (Bitmap)Bitmap.FromFile(file);
-
-                // apply the filter
-                var resizedTemplate = resizeFilter.Apply(template);
-
-                // find all matchings with specified above similarity
-                var matchings = tm.ProcessImage(sourceImage, resizedTemplate);
-                foreach (var match in matchings)
+                if (gs.Previously.Map.GameState == GS_WAITING && gs.Map.GameState == GS_DRAFTING)
                 {
-                    var fi = new FileInfo(file);
+                    var client = new HGV.Basilius.MetaClient();
+                    var mappping = client.GetADHeroes().ToDictionary(_ => _.Key, _ => _.Id);
 
-                    var data = new DataPackage()
+                    Console.WriteLine("Drafting");
+                    Console.WriteLine("Hero");
+                    Console.WriteLine("{0}:{1}", gs.Hero.ID, gs.Hero.Name);
+
+                    Thread.Sleep(4000); // Wait for ability draft screen to load. 
+
+                    var captureImage = ScreenCapture.CaptureApplication();
+
+                    captureImage.Save(".//output//capture.png");
+
+                    // create filter
+                    int h = (int)(captureImage.Height * 0.075);
+                    int x = (int)(captureImage.Width * 0.110);
+                    int w = (int)(captureImage.Width * 0.325);
+                    Crop filter = new Crop(new Rectangle(x, 10, w, h));
+                    // apply the filter
+                    Bitmap sourceImage = filter.Apply(captureImage);
+
+                    sourceImage.Save(".//output//header.png");
+
+                    // create template matching algorithm's instance
+                    ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(0.8f);
+
+                    var height = sourceImage.Height - 10;
+                    var raito = height / 94.0f;
+                    var width = (int)(71 * raito);
+                    var parts = sourceImage.Width / 10;
+
+                    // create filter
+                    var resizeFilter = new ResizeBicubic(width, height);
+
+                    var collection = new List<DataPackage>();
+                    var files = Directory.GetFiles(".//heroes");
+                    foreach (var file in files)
                     {
-                        Similarity = match.Similarity,
-                        Bounds = match.Rectangle,
-                        Name = fi.Name,
-                        Index = (int)(match.Rectangle.X / parts)
-                    };
-                    collection.Add(data);
+                        var key = Path.GetFileNameWithoutExtension(file);
+                        var heroId = 0;
+                        mappping.TryGetValue(key, out heroId);
+
+                        var template = (Bitmap)Bitmap.FromFile(file);
+
+                        // apply the filter
+                        var resizedTemplate = resizeFilter.Apply(template);
+
+                        // find all matchings with specified above similarity
+                        var matchings = tm.ProcessImage(sourceImage, resizedTemplate);
+                        foreach (var match in matchings)
+                        {
+                            var data = new DataPackage()
+                            {
+                                Similarity = match.Similarity,
+                                Bounds = match.Rectangle,
+                                Key = key,
+                                Hero = heroId,
+                                Index = (int)(match.Rectangle.X / parts)
+                            };
+                            collection.Add(data);
+                        }
+                    }
+
+                    Console.WriteLine("Pool");
+
+                    // Sort
+                    var heroes = new List<int>();
+                    var groups = collection.GroupBy(_ => _.Index).OrderBy(_ => _.Key);
+                    foreach (var group in groups)
+                    {
+                        var item = group.OrderByDescending(_ => _.Similarity).Take(1).FirstOrDefault();
+                        Console.WriteLine("[{0}] {1}:{2} ({3})", group.Key, item.Hero, item.Key, item.Similarity);
+                        heroes.Add(item.Hero);
+                    }
+
+                    Console.WriteLine("Launching Drafter");
+
+                    var roster = string.Join(",", heroes.ToArray());
+                    Process.Start("https://hgv-desolator.azurewebsites.net/#/draft?roster=" + roster);
+
+                    Console.WriteLine("");
                 }
             }
-
-            // Sort
-            var groups = collection.GroupBy(_ => _.Index).OrderBy(_ => _.Key);
-            foreach (var group in groups)
+            catch (Exception ex)
             {
-                Console.WriteLine("{0}", group.Key);
-
-                var items = group.OrderByDescending(_ => _.Similarity).Take(10).ToList();
-                foreach (var item in items)
-                {
-                    Console.WriteLine("{0} - {1}", item.Name, item.Similarity);
-                }
- 
+                // Next Time Gadget. NEXT TIME!
             }
         }
     }
