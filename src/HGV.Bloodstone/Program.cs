@@ -63,14 +63,18 @@ namespace HGV.Bloodstone
             {
                 bool DEBUGING = true;
 
+                if(gs.Map.GameState == DOTA_GameState.Undefined)
+                {
+                    return;
+                }
+                
                 if (gs.Previously.Map.GameState == GS_WAITING && gs.Map.GameState == GS_DRAFTING)
                 {
                     var client = new HGV.Basilius.MetaClient();
                     var heroKeys = client.GetADHeroes().ToDictionary(_ => _.Key, _ => _.Id);
 
                     Console.WriteLine("Drafting");
-                    Console.WriteLine("Hero");
-                    Console.WriteLine("{0}:{1}", gs.Hero.ID, gs.Hero.Name);
+                    Console.WriteLine("Hero {0}:{1}", gs.Hero.ID, gs.Hero.Name);
 
                     Thread.Sleep(4000); // Wait for ability draft screen to load. 
 
@@ -84,8 +88,6 @@ namespace HGV.Bloodstone
                     Bitmap overlay;
                     Bitmap source;
                     {
-
-
                         // create filter
                         var colorFiltering = new ColorFiltering();
                         // set channels' ranges to keep
@@ -117,14 +119,17 @@ namespace HGV.Bloodstone
                     var mergeFilter = new Merge(overlay);
                     var resultImage = mergeFilter.Apply(source);
 
+                    if (DEBUGING == true)
+                    {
+                        resultImage.Save("./output/bounds.png");
+                    }
+
                     var shapeChecker = new SimpleShapeChecker();
 
                     var bc = new BlobCounter();
                     bc.FilterBlobs = true;
-                    bc.MinHeight = 20;
-                    bc.MinWidth = 20;
-                    bc.MaxHeight = 100;
-                    bc.MaxWidth = 100;
+                    bc.MinHeight = 5;
+                    bc.MinWidth = 5;
                     bc.ProcessImage(resultImage);
 
                     var blobs = bc.GetObjectsInformation();
@@ -250,6 +255,7 @@ namespace HGV.Bloodstone
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Error");
                 // Next Time Gadget. NEXT TIME!
             }
         }
